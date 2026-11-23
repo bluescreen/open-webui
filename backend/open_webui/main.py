@@ -179,6 +179,7 @@ from open_webui.routers import (
     scim,
     search,
     skills,
+    systemone,
     tasks,
     terminals,
     tools,
@@ -606,6 +607,11 @@ app.state.OLLAMA_MODELS = {}
 
 app.state.OPENAI_MODELS = {}
 
+# System One
+
+
+app.state.SYSTEMONE_MODELS = {}
+
 # Tool servers
 
 app.state.TOOL_SERVERS = []
@@ -814,6 +820,7 @@ app.mount('/ws', socket_app)
 
 app.include_router(ollama.router, prefix='/ollama', tags=['ollama'])
 app.include_router(openai.router, prefix='/openai', tags=['openai'])
+app.include_router(systemone.router, prefix='/systemone', tags=['systemone'])
 
 
 app.include_router(pipelines.router, prefix='/api/v1/pipelines', tags=['pipelines'])

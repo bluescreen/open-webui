@@ -14,6 +14,7 @@
 	export let onSubmit = () => {};
 
 	export let pipeline = false;
+	export let endpoint = '/chat/completions';
 
 	export let url = '';
 	export let key = '';
@@ -45,9 +46,11 @@
 <div class="group/setting-row flex w-full gap-2 items-center">
 	<Tooltip
 		className="w-full relative"
-		content={$i18n.t(`WebUI will make requests to "{{url}}/chat/completions"`, {
-			url
-		})}
+		content={endpoint === '/chat/completions'
+			? $i18n.t(`WebUI will make requests to "{{url}}/chat/completions"`, {
+					url
+				})
+			: $i18n.t('WebUI will make requests to "{{url}}"', { url: `${url}${endpoint}` })}
 		placement="top-start"
 	>
 		{#if !(config?.enable ?? true)}

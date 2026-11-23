@@ -298,6 +298,16 @@ if _ollama_api_configs:
     except (JSONCodec.JSONDecodeError, TypeError):
         log.warning('OLLAMA_API_CONFIGS is not valid JSON, ignoring')
 
+# SYSTEMONE_API
+
+
+ENABLE_SYSTEMONE_API = os.getenv('ENABLE_SYSTEMONE_API', 'False').lower() == 'true'
+
+SYSTEMONE_API_BASE_URLS = [
+    url.strip().rstrip('/') for url in os.getenv('SYSTEMONE_API_BASE_URLS', '').split(';') if url.strip()
+]
+SYSTEMONE_API_KEYS = [key.strip() for key in os.getenv('SYSTEMONE_API_KEYS', '').split(';')]
+
 # OPENAI_API
 
 
@@ -2978,6 +2988,10 @@ DEFAULT_CONFIG = {
     'openai.api_keys': OPENAI_API_KEYS,
     'openai.api_base_urls': OPENAI_API_BASE_URLS,
     'openai.api_configs': OPENAI_API_CONFIGS,
+    'systemone.enable': ENABLE_SYSTEMONE_API,
+    'systemone.api_keys': SYSTEMONE_API_KEYS,
+    'systemone.api_base_urls': SYSTEMONE_API_BASE_URLS,
+    'systemone.api_configs': {},
     'models.base_models_cache': ENABLE_BASE_MODELS_CACHE,
     'tool_server.connections': TOOL_SERVER_CONNECTIONS,
     'oauth.client.timeout': OAUTH_CLIENT_TIMEOUT,

@@ -6,6 +6,7 @@
 
 	import { getOllamaConfig, updateOllamaConfig } from '$lib/apis/ollama';
 	import { getOpenAIConfig, updateOpenAIConfig, getOpenAIModels } from '$lib/apis/openai';
+	import { getSystemOneConfig, updateSystemOneConfig } from '$lib/apis/systemone';
 	import { getModels as _getModels, getBackendConfig } from '$lib/apis';
 	import { getConnectionsConfig, setConnectionsConfig } from '$lib/apis/configs';
 
@@ -41,11 +42,17 @@
 	let ENABLE_OPENAI_API: null | boolean = null;
 	let ENABLE_OLLAMA_API: null | boolean = null;
 
+	let ENABLE_SYSTEMONE_API: null | boolean = null;
+	let SYSTEMONE_API_BASE_URLS: string[] = [];
+	let SYSTEMONE_API_KEYS: string[] = [];
+	let SYSTEMONE_API_CONFIGS: any = {};
+
 	let connectionsConfig: any = null;
 
 	let pipelineUrls: Record<string, boolean> = {};
 	let showAddOpenAIConnectionModal = false;
 	let showAddOllamaConnectionModal = false;
+	let showAddSystemOneConnectionModal = false;
 	let modelListRefreshing = false;
 
 	const updateOpenAIHandler = async () => {
@@ -105,6 +112,25 @@
 		}
 	};
 
+	const updateSystemOneHandler = async () => {
+		if (ENABLE_SYSTEMONE_API !== null) {
+			SYSTEMONE_API_BASE_URLS = SYSTEMONE_API_BASE_URLS.map((url) => url.replace(/\/$/, ''));
+
+			const res = await updateSystemOneConfig(localStorage.token, {
+				ENABLE_SYSTEMONE_API: ENABLE_SYSTEMONE_API,
+				SYSTEMONE_API_BASE_URLS: SYSTEMONE_API_BASE_URLS,
+				SYSTEMONE_API_KEYS: SYSTEMONE_API_KEYS,
+				SYSTEMONE_API_CONFIGS: SYSTEMONE_API_CONFIGS
+			}).catch((error) => {
+				toast.error(`${error}`);
+			});
+
+			if (res) {
+				toast.success($i18n.t('System One API settings updated'));
+			}
+		}
+	};
+
 	const updateConnectionsHandler = async () => {
 		const res = await setConnectionsConfig(localStorage.token, connectionsConfig).catch((error) => {
 			toast.error(`${error}`);
@@ -138,6 +164,14 @@
 		await updateOpenAIHandler();
 	};
 
+	const addSystemOneConnectionHandler = async (connection: any) => {
+		SYSTEMONE_API_BASE_URLS = [...SYSTEMONE_API_BASE_URLS, connection.url];
+		SYSTEMONE_API_KEYS = [...SYSTEMONE_API_KEYS, connection.key];
+		SYSTEMONE_API_CONFIGS[SYSTEMONE_API_BASE_URLS.length - 1] = connection.config;
+
+		await updateSystemOneHandler();
+	};
+
 	const addOllamaConnectionHandler = async (connection: any) => {
 		OLLAMA_BASE_URLS = [...OLLAMA_BASE_URLS, connection.url];
 		OLLAMA_API_CONFIGS[OLLAMA_BASE_URLS.length - 1] = {
@@ -152,6 +186,7 @@
 		if ($user?.role === 'admin') {
 			let ollamaConfig: any = {};
 			let openaiConfig: any = {};
+			let systemOneConfig: any = {};
 
 			await Promise.all([
 				(async () => {
@@ -161,9 +196,20 @@
 					openaiConfig = await getOpenAIConfig(localStorage.token);
 				})(),
 				(async () => {
+					systemOneConfig = await getSystemOneConfig(localStorage.token);
+				})(),
+				(async () => {
 					connectionsConfig = await getConnectionsConfig(localStorage.token);
 				})()
 			]);
+
+			ENABLE_SYSTEMONE_API = systemOneConfig.ENABLE_SYSTEMONE_API ?? false;
+			SYSTEMONE_API_BASE_URLS = systemOneConfig.SYSTEMONE_API_BASE_URLS ?? [];
+			SYSTEMONE_API_KEYS = systemOneConfig.SYSTEMONE_API_KEYS ?? [];
+			SYSTEMONE_API_CONFIGS = systemOneConfig.SYSTEMONE_API_CONFIGS ?? {};
+			SYSTEMONE_API_BASE_URLS.forEach((_, idx) => {
+				SYSTEMONE_API_CONFIGS[idx] = SYSTEMONE_API_CONFIGS[idx] || {};
+			});
 
 			ENABLE_OPENAI_API = openaiConfig.ENABLE_OPENAI_API;
 			ENABLE_OLLAMA_API = ollamaConfig.ENABLE_OLLAMA_API;
@@ -209,6 +255,7 @@
 	const submitHandler = async () => {
 		updateOpenAIHandler();
 		updateOllamaHandler();
+		updateSystemOneHandler();
 
 		dispatch('save');
 
@@ -225,6 +272,11 @@
 	ollama
 	bind:show={showAddOllamaConnectionModal}
 	onSubmit={addOllamaConnectionHandler}
+/>
+
+<AddConnectionModal
+	bind:show={showAddSystemOneConnectionModal}
+	onSubmit={addSystemOneConnectionHandler}
 />
 
 <form class="flex h-full flex-col justify-between text-sm" on:submit|preventDefault={submitHandler}>
@@ -358,6 +410,73 @@
 							>
 								{$i18n.t('Click here for help.')}
 							</a>
+						</div>
+					</div>
+				{/if}
+
+				<AdminSettingRow
+					label={$i18n.t('settings.admin.connections.systemOneApi.label')}
+					let:labelId
+				>
+					<Switch
+						bind:state={ENABLE_SYSTEMONE_API}
+						on:change={async () => {
+							updateSystemOneHandler();
+						}}
+						ariaLabelledbyId={labelId}
+					/>
+				</AdminSettingRow>
+
+				{#if ENABLE_SYSTEMONE_API}
+					<div>
+						<div class="mb-2 flex items-center justify-between gap-4">
+							<div class="text-xs text-gray-600 dark:text-gray-400">
+								{$i18n.t('settings.admin.connections.manageSystemOneApiConnections.label')}
+							</div>
+
+							<Tooltip content={$i18n.t('settings.admin.connections.addConnection.label')}>
+								<button
+									aria-label={$i18n.t('settings.admin.connections.addConnection.label')}
+									class="flex size-6 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-700 dark:text-gray-600 dark:hover:bg-white/5 dark:hover:text-gray-300"
+									on:click={() => {
+										showAddSystemOneConnectionModal = true;
+									}}
+									type="button"
+								>
+									<Plus />
+								</button>
+							</Tooltip>
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							{#each SYSTEMONE_API_BASE_URLS as url, idx}
+								<OpenAIConnection
+									endpoint="/systemone"
+									bind:url={SYSTEMONE_API_BASE_URLS[idx]}
+									bind:key={SYSTEMONE_API_KEYS[idx]}
+									bind:config={SYSTEMONE_API_CONFIGS[idx]}
+									onSubmit={() => {
+										updateSystemOneHandler();
+									}}
+									onDelete={() => {
+										SYSTEMONE_API_BASE_URLS = SYSTEMONE_API_BASE_URLS.filter(
+											(url, urlIdx) => idx !== urlIdx
+										);
+										SYSTEMONE_API_KEYS = SYSTEMONE_API_KEYS.filter((key, keyIdx) => idx !== keyIdx);
+
+										let newConfig: any = {};
+										SYSTEMONE_API_BASE_URLS.forEach((url, newIdx) => {
+											newConfig[newIdx] = SYSTEMONE_API_CONFIGS[newIdx < idx ? newIdx : newIdx + 1];
+										});
+										SYSTEMONE_API_CONFIGS = newConfig;
+										updateSystemOneHandler();
+									}}
+								/>
+							{/each}
+						</div>
+
+						<div class="mt-1 text-[0.6875rem] text-gray-400 dark:text-gray-600">
+							{$i18n.t('settings.admin.connections.manageSystemOneApiConnections.description')}
 						</div>
 					</div>
 				{/if}

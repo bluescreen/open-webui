@@ -82,6 +82,14 @@
 							: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition select-none"
 						href="/playground/images">{$i18n.t('Images')}</a
 					>
+
+					<a
+						draggable="false"
+						class="min-w-fit px-1 text-sm {$pageUrl.pathname.includes('/playground/decisions')
+							? ''
+							: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition select-none"
+						href="/playground/decisions">{$i18n.t('Decisions')}</a
+					>
 				</div>
 			</div>
 		</div>

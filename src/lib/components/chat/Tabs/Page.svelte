@@ -92,6 +92,7 @@
 		'/playground': () => import('$lib/components/playground/Chat.svelte'),
 		'/playground/completions': () => import('$lib/components/playground/Completions.svelte'),
 		'/playground/images': () => import('$lib/components/playground/Images.svelte'),
+		'/playground/decisions': () => import('$lib/components/playground/Decisions.svelte'),
 		'/home': () => import('$lib/components/home/Home.svelte')
 	};
 	$: path = $url.pathname.replace(/\/$/, '');

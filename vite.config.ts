@@ -66,6 +66,10 @@ export default defineConfig({
 				target: backendTarget,
 				changeOrigin: true
 			},
+			'/systemone': {
+				target: backendTarget,
+				changeOrigin: true
+			},
 			'/oauth': {
 				target: backendTarget,
 				changeOrigin: true
